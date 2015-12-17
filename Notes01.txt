@@ -1,0 +1,77 @@
+00) INTRO
+*********
+
+	source directory;
+	*****************
+	c:\classload\src\
+	...............\com\levent\Helper.java
+	...............\com\levent\Main.java
+
+	classes directory;
+	******************
+	c:\classload\classes\
+
+	javac -d classes -sourcepath src src\com\levent\Helper.java
+	javac -d classes -sourcepath src src\com\levent\Main.java
+
+	classes directory after 'javac' command;
+	****************************************
+	c:\classload\classes\
+	...................\com\levent\Helper.class
+	...................\com\levent\Main.class
+
+	to run;
+	*******
+	c:\classload\
+
+	1) global classpath;
+	********************
+	set CLASSPATH=classes
+
+	java com.levent.Main
+
+	2) classpath as a parameter;
+	****************************
+	java -cp classes com.levent.Main
+
+
+	Multi ClassPath with -cp;
+	*************************
+	windows : java -cp classes;other_class_dir com.levent.Main
+	unix    : java -cp classes:other_class_dir com.levent.Main
+
+01) Create a .jar file and use it;
+**********************************
+
+Under c:\classload\classes
+
+jar cvf helper.jar com\levent\Helper.class
+
+move the jar to the c:\lib
+
+move helper.jar ..\lib\
+
+c:\classload\lib\
+...............\helper.jar
+
+Delete the helper class
+cd c:\classload\
+del classes\com\levent\Helper.class
+rmdir classes\com\levent
+
+If you try to run the Main.class again, ClassNotFoundException will be thrown;
+******************************************************************************
+
+c:\classload>java -cp classes com.pluralsight.Main
+Exception in thread "main" java.lang.NoClassDefFoundError: com/levent/Helper
+        at com.pluralsight.Main.main(Main.java:5)
+Caused by: java.lang.ClassNotFoundException: com.levent.Helper
+        at java.net.URLClassLoader.findClass(Unknown Source)
+        at java.lang.ClassLoader.loadClass(Unknown Source)
+        at sun.misc.Launcher$AppClassLoader.loadClass(Unknown Source)
+        at java.lang.ClassLoader.loadClass(Unknown Source)
+        ... 1 more
+		
+c:\classload>java -cp classes;lib\helper.jar com.pluralsight.Main
+Hello from helper
+

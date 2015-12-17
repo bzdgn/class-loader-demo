@@ -1,0 +1,8 @@
+URLClassLoader;
+***************
+
+- Load from a file based URL
+- Load from a network URL
+- Writing custom classloader;
+	- Load from a database
+

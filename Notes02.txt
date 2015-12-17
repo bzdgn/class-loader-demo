@@ -1,0 +1,186 @@
+Classloading
+************
+- Core classes
+- Extension classes
+- Delegation module
+- Displaying the delegation
+
+Java\jrex.y.z;
+**************
+lib\rt.jar		: Java Core classes
+lib\ext\*.jar	: Extension classes
+
+Copy the helper.jar to the ext folder then It will be added to the classpath;
+
+lib\ext\helper.jar
+
+Before adding the helper to lib\ext;
+************************************
+C:\classload>java -cp classes com.pluralsight.Main
+Exception in thread "main" java.lang.NoClassDefFoundError: com/levent/Helper
+        at com.pluralsight.Main.main(Main.java:5)
+Caused by: java.lang.ClassNotFoundException: com.levent.Helper
+        at java.net.URLClassLoader.findClass(Unknown Source)
+        at java.lang.ClassLoader.loadClass(Unknown Source)
+        at sun.misc.Launcher$AppClassLoader.loadClass(Unknown Source)
+        at java.lang.ClassLoader.loadClass(Unknown Source)
+        ... 1 more
+
+After adding the helper to lib\ext;
+***********************************	
+C:\classload>java -cp classes com.pluralsight.Main
+Hello from helper
+
+Compile #1; (helper.jar used from lib/ext)
+***********
+javac -sourcepath src src\com\pluralsight\Main.java
+
+Compile #2; (helper.jar explicityly set location)
+***********
+java -cp classes -Djava.ext.dirs=C:\classload\lib com.pluralsight.Main
+
+Demo
+****
+Lets create a custom String class
+
+c:\classload\
+............\src\java\lang\String.java
+
+javac -sourcepath src src\com\pluralsight\Main.java
+
+Try it;
+*******
+C:\classload>javac -sourcepath src src\com\pluralsight\Main.java
+src\com\pluralsight\Main.java:7: cannot find symbol
+symbol  : constructor String(java.lang.String)
+location: class java.lang.String
+                String message = new String("Hello world");
+                                 ^
+1 error
+
+To make it work;
+
+1) add method on custom String class;
+	public int getValue() { return 42; }
+	
+2) use getValue() method on Main.java;
+	System.out.println(message.getValue());
+	
+3) Use default no-arg Constructor in Main.java;
+	public String() {}	public String() {}
+	
+Try it again;
+*************
+C:\classload>javac -sourcepath src src\com\pluralsight\Main.java -d classes
+
+C:\classload>java -cp classes com.pluralsight.Main
+Hello from helper
+Exception in thread "main" java.lang.NoSuchMethodError: java.lang.String.getValu
+e()I
+        at com.pluralsight.Main.main(Main.java:9)
+
+java.lang.NoSuchMethodError Error came from rt.jar ! Bootstrap class loader loaded
+the original String.class from the rt.jar (runtime core class library)
+
+Delegation;
+***********
+- There is a hierarchy of classloaders.
+- Class loader may delegate to its parent.
+- Parent may load class.
+- Loaded classes are cached
+
+Bootstrap Class Loader
+          /\
+Extension Class Loader
+        /    \
+Application Class Loader
+
+If you load a very basic Java console application, you'll end up with 3
+class loaders;
+
+1) Application Class Loader: Whose job is to load your classes and any
+classes loaded from the local classpath.
+
+2) Extension Class Loader: Loads classes from the extension directory.
+
+3) Bootstrap Class Loader: In the Oracle Java VM is written in C.
+
+The Virtual Machine asks to Application Class Loader to load a class.
+And the Application Class Loader will delegate to Extension Class Loader,
+which will delegate to the Bootsrap Class Loader.
+
+1) Application CL delegates to the parent CL, which is Extension CL.
+2) Extension CL delegates to the parent CL, which is Bootstrap CL.
+3) If Bootstrap CL finds the class to load, it loads or if it cant,
+it fails, and then Extension CL will do a check.
+4) If Extension CL finds the class to load, it loads or if it cant,
+it fails, and then Application CL will do a check.
+5) If Application CL find the class to load, it loads or if it cant,
+then it fails and throw a NoClassDefFoundError exception.
+
+Each time one of these class loaders is asked to load a class, and will
+first of all, check to see if is previously loaded, and if it is so,
+it will return that cached instance of the class.
+
+So in this case, when we load a class up, we will always get one instance
+of the class in the memory. So the class type for the class is essentially
+a Singleton, or we can think of it that way.
+
+Write the Delegation.java;
+**************************
+package com.levent;
+
+import java.net.URL;
+import java.net.URLClassLoader;
+
+public class Delegation {
+	public static void main(String[] args) {
+		URLClassLoader classLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
+		
+		do{
+			System.out.println("Class Loader: " + classLoader);
+		} while ((classLoader = (URLClassLoader) classLoader.getParent()) != null);
+		
+		System.out.println("Class Loader: Bootstrap classLoader");
+	}
+}
+
+Compile
+*******
+javac -sourcepath src src\com\levent\Delegation.java -d classes
+
+Run
+***
+java -cp classes com.levent.Delegation
+
+To Print Delegation Level Loaded Classes, write DelegationClasses.java
+**********************************************************************
+package com.levent;
+
+import java.net.URL;
+import java.net.URLClassLoader;
+
+public class DelegationClasses {
+	public static void main(String[] args) {
+		URLClassLoader classLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
+		
+		do{
+			System.out.println("Class Loader: " + classLoader);
+			
+			for (URL url : classLoader.getURLs()) {
+				System.out.printf("\t %s\n", url.getPath());
+			}
+			
+		} while ((classLoader = (URLClassLoader) classLoader.getParent()) != null);
+		
+		System.out.println("Class Loader: Bootstrap classLoader");
+	}
+}
+
+Compile
+*******
+javac -sourcepath src src\com\levent\DelegationClasses.java -d classes
+
+Run
+***
+java -cp classes com.levent.DelegationClasses
